@@ -33,6 +33,9 @@ tomcatRunningID=`docker ps | grep catalina.sh | awk '{print $1}'`
 if [ -z "$tomcatRunningID" ];then
   echo [`System_date`] Tomcat docker is not running. Start it now.
   tomcatRunningID=`docker run -d -p 8080:8080 tomcat`
+  echo [`System_date`] Sleep 10 seconds.
+  sleep 10
+
   else
     echo [`System_date`] Tomcat docker is running now.
     echo [`System_date`] The CONTAINER ID is $tomcatRunningID.
