@@ -29,12 +29,13 @@ if [ -z "$tomcatRunningID" ];then
   else
     echo Tomcat docker is running now.
     echo The CONTAINER ID is $tomcatRunningID.
-    echo Copy $WAR_FILE_NAME to Tomcat.
-    docker cp $WAR_FILE_NAME $tomcatRunningID:/usr/local/tomcat/webapps
-    echo Restart Tomcat.
-    docker exec $tomcatRunningID /usr/local/tomcat/bin/catalina.sh start
 fi
 
+
+echo Copy $WAR_FILE_NAME to Tomcat.
+docker cp $WAR_FILE_NAME $tomcatRunningID:/usr/local/tomcat/webapps
+echo Restart Tomcat.
+docker exec $tomcatRunningID /usr/local/tomcat/bin/catalina.sh start
 
 echo Sleep 10 seconds.
 sleep 10
