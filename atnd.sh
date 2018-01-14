@@ -1,11 +1,23 @@
 #!/bin/sh
-
+###########################
+# History
+# Author: Lewis Li  Lcgogo123@163.com  +8613911983435
+#
 # 2018.Jan.13th  Lewis Li  ver0.1  New script to deploy Tomcat in a Docker with local war file.
 # 2018.Jan.13th  Lewis Li  ver0.2  Add file download.
 # 2018.Jan.14th  Lewis Li  ver0.3  Add 2 tomcat container in ports 8080 & 8081. Error need fix.
-# 2018.Jan.14th  Lewis Li  ver0.4  Add nginx part.
+# 2018.Jan.14th  Lewis Li  ver0.4  Add nginx part and rename this script to atnd.sh which means auto_tomcat_nginx_docker.
 # 2018.Jan.14th  Lewis Li  ver0.5  Add zip file download.
 # 2018.Jan.14th  Lewis Li  ver0.6  Add tomcat ip to tomcat.conf
+# 2018.Jan.14th  Lewis Li  ver1.0  Add http code check and release version 1.0
+###########################
+
+############
+# Exit Code
+# 0 is OK
+# 1 is no change
+# 2 is error
+#############
 
 #############
 # CONSTANT
@@ -15,14 +27,11 @@ WAR_FOLDER=${WAR_FILE_NAME:0:-4}
 
 ZIP_FILE_NAME=123.zip
 ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
-
-# Exit Code
-# 0 is OK
-# 1 is no change
-# 2 is error
 #############
 
+####################
 # test environment #
+####################
 yum install -y unzip zip
 
 ###############################################
@@ -47,11 +56,13 @@ function File_Download(){
   fileNameBak=$fileNameTime.bak
   if [ -e $fileName ];then
     wget -O $fileNameNew $fileURL$fileName
-
+    sleep 3
     fileCRC=`cksum $fileName | awk '{print $1}'`
     fileNewCRC=`cksum $fileNameNew | awk '{print $1}'`
     if [ "$fileCRC" == "$fileNewCRC" ];then
       echo [`System_date`] The downloaded $fileName is same as local.
+      # echo [`System_date`] Remove $fileNameNew now.
+      # rm -f $fileNameNew
       return 1
       else
         echo [`System_date`] Backup the old file and rename the new one as now.
@@ -67,7 +78,9 @@ function File_Download(){
 }
 ###############################################
 
-
+############
+# Download #
+############
 File_Download $WAR_URL $WAR_FILE_NAME
 warDownloadResult=$?
 File_Download $ZIP_URL $ZIP_FILE_NAME
@@ -114,30 +127,33 @@ fi
 
 #for tomcatPort in 8080 8081;do
 for tomcatPort in 8080;do
-  #echo tomcatPort
   tomcatRunningID=`docker ps | grep catalina.sh | grep "0.0.0.0:$tomcatPort->8080" | awk '{print $1}'`
   #echo $tomcatRunningID
   if [ -z "$tomcatRunningID" ];then
-    echo [`System_date`] Tomcat docker is not running at port $tomcatPort. Start it now.
+    echo [`System_date`] Tomcat container is not running at port $tomcatPort. Start it now.
     tomcatRunningID=`docker run -d -p $tomcatPort:8080 tomcat`
     echo [`System_date`] Sleep 10 seconds.
     sleep 10
-  
     else
-      echo [`System_date`] Tomcat docker is running at port $tomcatPort now.
+      echo [`System_date`] Tomcat container is running at port $tomcatPort now.
       echo [`System_date`] The CONTAINER ID is $tomcatRunningID.
   fi
-  
   
   echo [`System_date`] Copy $WAR_FILE_NAME to Tomcat.
   docker cp $WAR_FILE_NAME $tomcatRunningID:/usr/local/tomcat/webapps
   echo [`System_date`] Restart Tomcat in container $tomcatRunningID.
   docker exec $tomcatRunningID /usr/local/tomcat/bin/catalina.sh start
-  
   echo [`System_date`] Sleep 10 seconds.
   sleep 10
   
-  curl http://localhost:$tomcatPort/$WAR_FOLDER/
+  # Tomcat http code check
+  tomcatHttpCode=`curl -o /dev/null -s -w %{http_code} "http://localhost:$tomcatPort/$WAR_FOLDER/"`
+  if [ $tomcatHttpCode = 200 ];then
+    echo [`System_date`] Tomcat web is ok.
+    else
+      echo [`System_date`] Tomcat web is error with http code $tomcatHttpCode. Please check http://localhost:$tomcatPort/$WAR_FOLDER/
+      exit 2
+  fi
 done
 
 ##############
@@ -146,8 +162,9 @@ done
 
 mkdir -p $PWD/nginx/conf $PWD/nginx/html $PWD/nginx/logs
 unzip -o $ZIP_FILE_NAME -d $PWD/nginx/html
-tomcatDockerIP=`docker inspect --format '{{.NetworkSettings.IPAddress}}' $tomcatRunningID`
 
+# Create nginx conf file
+tomcatDockerIP=`docker inspect --format '{{.NetworkSettings.IPAddress}}' $tomcatRunningID`
 cat > $PWD/nginx/conf/tomcat.conf <<EOF
 upstream tomcat {
     ip_hash;
@@ -180,19 +197,33 @@ server {
 }
 EOF
 
+# Stop nginx if any
 nginxRunningID=`docker ps | grep nginx | grep "0.0.0.0:80->80" | awk '{print $1}'`
 if [ -z "$nginxRunningID" ];then
-  echo [`System_date`] Nginx docker is not running at port 80. Start it now.
+  echo [`System_date`] Nginx container is not running at port 80. Start it now.
   else
-    echo [`System_date`] Nginx is running, stop it now.
+    echo [`System_date`] Nginx container is running, stop it now.
     docker stop $nginxRunningID
 fi
+echo [`System_date`] Sleep 5 seconds.
+sleep 5
 
-docker run -d -p 80:80 -v $PWD/nginx/conf/:/etc/nginx/conf.d/ -v $PWD/nginx/html/:/usr/share/nginx/html/ -v $PWD/nginx/logs:/wwwlogs nginx
-
+# Re-run nginx 
+echo [`System_date`] Start nginx container.
+nginxRunningID=`docker run -d -p 80:80 -v $PWD/nginx/conf/:/etc/nginx/conf.d/ -v $PWD/nginx/html/:/usr/share/nginx/html/ -v $PWD/nginx/logs:/wwwlogs nginx`
+echo [`System_date`] Nginx container is running now. 
 echo [`System_date`] Sleep 10 seconds.
 sleep 10
 
-curl http://localhost
-
-exit 0
+# Http check
+nginxHttpCode=`curl -o /dev/null -s -w %{http_code} "http://localhost"`
+if [ $nginxHttpCode = 200 ];then
+  echo [`System_date`] Nginx web is ok.
+  publicIP=`wget -t 3 -T 15 -qO- http://ipv4.icanhazip.com`
+  echo -e [`System_date`] "\033[32;49;1m Completed! \033[39;49;0m" You can access http://localhost in a brower to check. 
+  echo [`System_date`] If you have a public IP, you can access http://$publicIP in brower to double check.
+  exit 0
+  else
+    echo [`System_date`] Nginx web is error with http code $nginxHttpCode. Please check http://localhost
+    exit 2
+fi
