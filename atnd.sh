@@ -32,7 +32,9 @@ ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
 ####################
 # test environment #
 ####################
-yum install -y unzip zip
+if [ -z `rpm -qa | grep unzip` ];then
+  yum install -y unzip zip
+fi
 
 ###############################################
 # function System_date
@@ -61,8 +63,8 @@ function File_Download(){
     fileNewCRC=`cksum $fileNameNew | awk '{print $1}'`
     if [ "$fileCRC" == "$fileNewCRC" ];then
       echo [`System_date`] The downloaded $fileName is same as local.
-      # echo [`System_date`] Remove $fileNameNew now.
-      # rm -f $fileNameNew
+      echo [`System_date`] Remove $fileNameNew now.
+      rm -f $fileNameNew
       return 1
       else
         echo [`System_date`] Backup the old file and rename the new one as now.
@@ -217,13 +219,15 @@ sleep 10
 
 # Http check
 nginxHttpCode=`curl -o /dev/null -s -w %{http_code} "http://localhost"`
-if [ $nginxHttpCode = 200 ];then
+tomcatWARHttpCode=`curl -o /dev/null -s -w %{http_code} "http://localhost/$WAR_FOLDER"`
+if [[ $nginxHttpCode = 200 && $tomcatWARHttpCode = 302 ]];then
   echo [`System_date`] Nginx web is ok.
   publicIP=`wget -t 3 -T 15 -qO- http://ipv4.icanhazip.com`
-  echo -e [`System_date`] "\033[32;49;1m Completed! \033[39;49;0m" You can access http://localhost in a brower to check. 
-  echo [`System_date`] If you have a public IP, you can access http://$publicIP in brower to double check.
+  echo -e [`System_date`] "\033[32;49;1m Completed! \033[39;49;0m" You can access http://localhost/$WAR_FOLDER in a brower to check. 
+  echo [`System_date`] If you have a public IP, you can access http://$publicIP/$WAR_FOLDER in brower to double check.
   exit 0
   else
     echo [`System_date`] Nginx web is error with http code $nginxHttpCode. Please check http://localhost
+    echo [`System_date`] Tomcat web is error with http code $tomcatWARHttpCode. Please check http://localhost/$WAR_FOLDER
     exit 2
 fi
