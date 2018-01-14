@@ -4,25 +4,40 @@
 # 2018.Jan.13th  Lewis Li  ver0.2  Add file download.
 # 2018.Jan.14th  Lewis Li  ver0.3  Add 2 tomcat container in ports 8080 & 8081. Error need fix.
 # 2018.Jan.14th  Lewis Li  ver0.4  Add nginx part.
+# 2018.Jan.14th  Lewis Li  ver0.5  Add zip file download.
 
+#############
+# CONSTANT
 WAR_FILE_NAME=yijava.war
 WAR_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
 WAR_FOLDER=${WAR_FILE_NAME:0:-4}
+
+ZIP_FILE_NAME=123.zip
+ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
 
 # Exit Code
 # 0 is OK
 # 1 is no change
 # 2 is error
+#############
+
+# test environment #
+yum install -y unzip zip
 
 ###############################################
 # function System_date
 function System_date(){
-echo `date +%Y-%m-%d-%H:%M:%S`
+  echo `date +%Y-%m-%d-%H:%M:%S`
 }
 ###############################################
 
 ###############################################
 # fucntion File_Download
+#
+# Return code 
+# 0 updated local file success
+# 1 no update because local file is same as remote
+
 function File_Download(){
   fileURL=$1
   fileName=$2
@@ -35,21 +50,34 @@ function File_Download(){
     fileCRC=`cksum $fileName | awk '{print $1}'`
     fileNewCRC=`cksum $fileNameNew | awk '{print $1}'`
     if [ "$fileCRC" == "$fileNewCRC" ];then
-      echo [`System_date`] The downloaded $fileName is same as local. Exit now.
-      exit 1
+      echo [`System_date`] The downloaded $fileName is same as local.
+      return 1
       else
         echo [`System_date`] Backup the old file and rename the new one as now.
         mv $fileName $fileNameBak
         sleep 2
         mv $fileNameNew $fileName
+        return 0
     fi
   else
     wget $fileURL$fileName
+    return 0
   fi
 }
 ###############################################
 
+
 File_Download $WAR_URL $WAR_FILE_NAME
+warDownloadResult=$?
+File_Download $ZIP_URL $ZIP_FILE_NAME
+zipDownloadResult=$?
+
+if [[ "$warDownloadResult" -eq 1 && "$zipDownloadResult" -eq 1 ]];then
+  echo [`System_date`] Both remote zip file and war file are same as local. Exit now.
+  exit 1
+  #elif 
+fi
+
 
 ##################
 # Docker prepare #
