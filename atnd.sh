@@ -145,11 +145,12 @@ done
 
 mkdir -p $PWD/nginx/conf $PWD/nginx/html $PWD/nginx/logs
 unzip -o $ZIP_FILE_NAME -d $PWD/nginx/html
+tomcatDockerIP=`docker inspect --format '{{.NetworkSettings.IPAddress}}' $tomcatRunningID`
 
 cat > $PWD/nginx/conf/tomcat.conf <<EOF
 upstream tomcat {
     ip_hash;
-    server 127.0.0.1:$tomcatPort;
+    server $tomcatDockerIP:$tomcatPort;
 }
 EOF
 
