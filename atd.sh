@@ -67,7 +67,8 @@ if [ -z "$tomcatExist" ];then
     echo [`System_date`] Tomcat docker image is existed.
 fi
 
-for port in 8080 8081;do
+#for port in 8080 8081;do
+for port in 8081;do
   #echo port
   tomcatRunningID=`docker ps | grep catalina.sh | grep "0.0.0.0:$port->8080" | awk '{print $1}'`
   #echo $tomcatRunningID
