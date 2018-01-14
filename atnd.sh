@@ -5,6 +5,7 @@
 # 2018.Jan.14th  Lewis Li  ver0.3  Add 2 tomcat container in ports 8080 & 8081. Error need fix.
 # 2018.Jan.14th  Lewis Li  ver0.4  Add nginx part.
 # 2018.Jan.14th  Lewis Li  ver0.5  Add zip file download.
+# 2018.Jan.14th  Lewis Li  ver0.6  Add tomcat ip to tomcat.conf
 
 #############
 # CONSTANT
