@@ -144,11 +144,12 @@ done
 ##############
 
 mkdir -p $PWD/nginx/conf $PWD/nginx/html $PWD/nginx/logs
+unzip -o $ZIP_FILE_NAME -d $PWD/nginx/html
 
 cat > $PWD/nginx/conf/tomcat.conf <<EOF
 upstream tomcat {
     ip_hash;
-    server 127.0.0.1:8080;
+    server 127.0.0.1:$tomcatPort;
 }
 EOF
 
@@ -177,7 +178,19 @@ server {
 }
 EOF
 
+nginxRunningID=`docker ps | grep nginx | grep "0.0.0.0:80->80" | awk '{print $1}'`
+if [ -z "$nginxRunningID" ];then
+  echo [`System_date`] Nginx docker is not running at port 80. Start it now.
+  else
+    echo [`System_date`] Nginx is running, stop it now.
+    docker stop $nginxRunningID
+fi
+
 docker run -d -p 80:80 -v $PWD/nginx/conf/:/etc/nginx/conf.d/ -v $PWD/nginx/html/:/usr/share/nginx/html/ -v $PWD/nginx/logs:/wwwlogs nginx
 
+echo [`System_date`] Sleep 10 seconds.
+sleep 10
+
+curl http://localhost
 
 exit 0
