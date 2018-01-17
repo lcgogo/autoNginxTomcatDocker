@@ -67,7 +67,7 @@ Assume the build creates 2 output files: one is a zip file and the other is a wa
 
 6. Open a browser to access http://localhost to check the result (or use frontend auto test tools).
 
-7. If the result is OK, package the docker images with test tag and deliver to test environment by ansible.
+7. If the result is OK, package the docker images with test tag and deliver to test environment by ansible or k8s.
 
 8. If the test cases are ok, change the docker images with stage tag and deliver to stage environment.
 
