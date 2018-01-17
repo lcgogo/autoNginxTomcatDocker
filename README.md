@@ -63,7 +63,7 @@ pipeline {
 
 Assume the build creates 2 output files: one is a zip file and the other is a war file at local or upload to a website. (local file is unavaiable now. Planning.)
 
-5. Run install.sh and input the local war file full path or url and the local zip file full path or url.
+5. Input the local war & zip files full path or url in atnd.sh and run install.sh.
 
 6. Open a browser to access http://localhost to check the result (or use frontend auto test tools Planning).
 
