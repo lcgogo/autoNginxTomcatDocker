@@ -21,8 +21,8 @@
 
 #############
 # CONSTANT
-WAR_FILE_NAME=yijava.war
-WAR_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
+WAR_FILE_NAME=demo.war
+WAR_URL="http://lcgogo-java-demo.oss-cn-beijing.aliyuncs.com/java-demo/target/"
 WAR_FOLDER=${WAR_FILE_NAME:0:-4}
 
 ZIP_FILE_NAME=123.zip
@@ -49,7 +49,6 @@ function System_date(){
 # Return code 
 # 0 updated local file success
 # 1 no update because local file is same as remote
-
 function File_Download(){
   fileURL=$1
   fileName=$2
