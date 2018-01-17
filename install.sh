@@ -10,12 +10,27 @@
 #
 #
 
+runFile=atnd.sh
+runFolder=/usr/local/atnd/
+serviceFullName=atnd.service
+serviceName=${serviceFullName:0:-8}
 
-chmod 777 atnd.sh
-mkdir -p /usr/local/atnd/ /usr/local/atnd/log
-cp atnd.sh /usr/local/atnd/atnd.sh
+if [ ! -e $runFile ];then
+  echo The $atnd.sh is not exist in the same folder. Exit without any change.
+  exit 1
+fi
 
-cat > /usr/lib/systemd/system/atnd.service <<EOF
+cat /etc/redhat-release | grep 7\..*
+if [ $? -ne 0 ];then
+  echo Please make sure your system is CentOS 7 or RedHat 7.
+  exit 1
+fi
+
+chmod 755 $runFile
+mkdir -p $runFolder $runFolder/log
+\cp $runFile $runFolder
+
+cat > /usr/lib/systemd/system/$serviceFullName <<EOF
 [Unit]
 Description=Auto Tomcat Nginx Docker deploy service
 After=syslog.target network.target
@@ -29,7 +44,17 @@ RestartSec=2
 WantedBy=multi-user.target
 EOF
 
-chmod 644 /usr/lib/systemd/system/atnd.service
+chmod 644 /usr/lib/systemd/system/$serviceFullName
 systemctl daemon-reload
-systemctl start atnd
-systemctl enable atnd
+systemctl start $serviceName
+systemctl enable $serviceName
+
+sleep 2
+set -x
+systemctl status $serviceName -l
+set +x
+if [ $? -ne 0 ];then
+  echo $serviceName is not active correctly. Please manual check.
+  else
+    echo $serviceName is running now.
+fi
