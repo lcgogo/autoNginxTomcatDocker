@@ -54,7 +54,6 @@ pipeline {
 
 4. Commit the change and rerun BlueOcean RUN (manual or using API? Planning). 
 
-
 ```
 [root@izm5e3r1zr2tv4mzafpbiaz simple-java-maven-app]# git add Jenkinsfile
 [root@izm5e3r1zr2tv4mzafpbiaz simple-java-maven-app]# git commit -m "test"
@@ -68,4 +67,10 @@ Assume the build creates 2 output files: one is a zip file and the other is a wa
 
 6. Open a browser to access http://localhost to check the result (or use frontend auto test tools).
 
-7. If the result is OK. Package the docker images.
+7. If the result is OK, package the docker images with test tag and deliver to test environment by ansible.
+
+8. If the test cases are ok, change the docker images with stage tag and deliver to stage environment.
+
+9. If the test cases are error, redeploy the old image in test environment.
+
+10. If the images in stage environment are ok, use K8s to deploy in production environment.
