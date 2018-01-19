@@ -55,6 +55,8 @@ systemctl status $serviceName -l
 set +x
 if [ $? -ne 0 ];then
   echo $serviceName is not active correctly. Please manual check.
+  exit 2
   else
     echo $serviceName is running now.
+    exit 0
 fi
