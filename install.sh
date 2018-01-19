@@ -20,7 +20,9 @@ if [ ! -e $runFile ];then
   exit 1
 fi
 
+set -x
 cat /etc/redhat-release | grep 7\..*
+set +x
 if [ $? -ne 0 ];then
   echo Please make sure your system is CentOS 7 or RedHat 7.
   exit 1
