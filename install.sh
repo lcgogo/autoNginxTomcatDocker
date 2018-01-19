@@ -3,12 +3,18 @@
 # It will do followed steps:
 # 0. Copy atnd.sh to /usr/local/atnd
 # 1. Register and enable a service: atnd.service at /usr/lib/systemd/system
-# 2. Add CONSTANT according to your input
+# 2. Add CONSTANT to atnd.conf according to your input
 #
 # mvn test
 # echo $BUILD_NUMBER > target/BUILD_NUMBER.txt
 #
 #
+
+echo Please input the location of war file: \(For example: http://example.com/demo.war\)
+read warUrl
+echo $warUrl | awk -F "/" '{print $NF}'
+
+exit 
 
 runFile=atnd.sh
 runFolder=/usr/local/atnd/
