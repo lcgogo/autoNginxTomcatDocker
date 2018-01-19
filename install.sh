@@ -10,14 +10,12 @@
 #
 #
 
-echo Please input the location of war file: \(For example: http://example.com/demo.war\)
-read warUrl
-echo $warUrl | awk -F "/" '{print $NF}'
-
-exit 
+echo This script is used to install atnd.sh as a system service.
 
 runFile=atnd.sh
 runFolder=/usr/local/atnd/
+configFile=atnd.conf
+configFullPath=$runFolder$configFile
 serviceFullName=atnd.service
 serviceName=${serviceFullName:0:-8}
 
@@ -25,6 +23,44 @@ if [ ! -e $runFile ];then
   echo The $atnd.sh is not exist in the same folder. Exit without any change.
   exit 1
 fi
+
+echo Please input the location of war file:
+echo \(For example: http://example.com/demo.war or /var/local/atnd/demo.war\)
+read warUrl
+WAR_FILE_NAME=`echo $warUrl | awk -F "/" '{print $NF}'`
+WAR_URL=`echo ${warUrl:0:-${#WAR_FILE_NAME}}`
+
+echo Please input the location of zip file:
+echo \(For example: http://example.com/demo.zip or /var/local/atnd/demo.zip\)
+read zipUrl
+ZIP_FILE_NAME=`echo $zipUrl | awk -F "/" '{print $NF}'`
+ZIP_URL=`echo ${zipUrl:0:-${#ZIP_FILE_NAME}}`
+
+touch $configFullPath
+echo WAR_FILE_NAME=$WAR_FILE_NAME > $configFullPath
+echo WAR_URL=\"$WAR_URL\" >> $configFullPath
+echo ZIP_FILE_NAME=$ZIP_FILE_NAME >> $configFullPath
+echo ZIP_URL=\"$ZIP_URL\" >> $configFullPath
+
+echo You input is below, please confirm again
+echo "#############"
+cat $configFullPath
+echo "#############"
+echo -en "Please input Y/N: "
+read choice
+case $choice in
+  Y|y) echo Accept and continue.  
+  ;;
+  N|n) echo Exit now without any changes. You can run this script again if needed.
+       exit 1
+  ;;
+  *) echo Invalid input. Please input Y or N. You input is $choice. 
+     echo Exit now without any changes. You can run this script again if needed.
+     exit 1
+  ;;
+esac
+
+exit
 
 set -x
 cat /etc/redhat-release | grep 7\..*
