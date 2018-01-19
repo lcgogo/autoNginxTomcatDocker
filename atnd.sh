@@ -10,6 +10,7 @@
 # 2018.Jan.14th  Lewis Li  ver0.5  Add zip file download.
 # 2018.Jan.14th  Lewis Li  ver0.6  Add tomcat ip to tomcat.conf
 # 2018.Jan.14th  Lewis Li  ver1.0  Add http code check and release version 1.0
+# 2018.Jan.19th  Lewis Li  ver1.1  Move CONSTANT to a seperated file atnd.conf
 ###########################
 
 ############
@@ -21,12 +22,16 @@
 
 #############
 # CONSTANT
-WAR_FILE_NAME=demo.war
-WAR_URL="http://lcgogo-java-demo.oss-cn-beijing.aliyuncs.com/java-demo/target/"
+# Example:
+# WAR_FILE_NAME=demo.war
+# WAR_URL="http://lcgogo-java-demo.oss-cn-beijing.aliyuncs.com/java-demo/target/"
+#
+# ZIP_FILE_NAME=123.zip
+# ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
+export `cat $PWD/atnd.conf`
+WAR_URL=${WAR_URL:1:-1}
 WAR_FOLDER=${WAR_FILE_NAME:0:-4}
-
-ZIP_FILE_NAME=123.zip
-ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
+ZIP_URL=${ZIP_URL:1:-1}
 #############
 
 ####################
