@@ -11,6 +11,7 @@
 # 2018.Jan.14th  Lewis Li  ver0.6  Add tomcat ip to tomcat.conf
 # 2018.Jan.14th  Lewis Li  ver1.0  Add http code check and release version 1.0
 # 2018.Jan.19th  Lewis Li  ver1.1  Move CONSTANT to a seperated file atnd.conf
+# 2018.Jan.20th  Lewis Li  ver1.2  Add download failure check.
 ###########################
 
 ############
@@ -55,6 +56,7 @@ function System_date(){
 # Return code 
 # 0 updated local file success
 # 1 no update because local file is same as remote
+# 2 Error
 function File_Download(){
   fileURL=$1
   fileName=$2
@@ -63,6 +65,10 @@ function File_Download(){
   fileNameBak=$fileNameTime.bak
   if [ -e $fileName ];then
     wget -O $fileNameNew $fileURL$fileName
+    if [ $? -ne 0 ];then
+      echo [`System_date`] Download failure. Exit now.
+      return 2
+    fi
     sleep 3
     fileCRC=`cksum $fileName | awk '{print $1}'`
     fileNewCRC=`cksum $fileNameNew | awk '{print $1}'`
@@ -93,12 +99,18 @@ warDownloadResult=$?
 File_Download $ZIP_URL $ZIP_FILE_NAME
 zipDownloadResult=$?
 
-if [[ "$warDownloadResult" -eq 1 && "$zipDownloadResult" -eq 1 ]];then
-  echo [`System_date`] Both remote zip file and war file are same as local. Exit now.
+if [ $warDownloadResult -eq 2 ];then
+  echo [`System_date`] war file download failed. Exit without any change.
   exit 1
-  #elif 
+  elif  [ $zipDownloadResult -eq 2 ];then
+    echo [`System_date`] zip file download failed. Exit without any change.
+    exit 1
 fi
 
+if [[ $warDownloadResult -eq 1 && $zipDownloadResult -eq 1 ]];then
+  echo [`System_date`] Both remote zip file and war file are same as local. Exit without any change.
+  exit 1
+fi
 
 ##################
 # Docker prepare #
