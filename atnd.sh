@@ -31,6 +31,9 @@
 # ZIP_FILE_NAME="123.zip"
 # ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
 export `cat /usr/local/atnd/atnd.conf`
+RUNNING_FOLDER=/usr/local/atnd
+cd $RUNNING_FOLDER
+LOG_FULLPATH=/usr/local/atnd/log/atnd.log
 WAR_URL=${WAR_URL:1:-1}  # :1:-1 to remove " in string's head and end
 WAR_FILE_NAME=${WAR_FILE_NAME:1:-1}
 WAR_FOLDER=${WAR_FILE_NAME:0:-4}  # used in tomcat folder webapps
@@ -96,21 +99,26 @@ function File_Download(){
 ############
 # Download #
 ############
+if [ -e $LOG_FULLPATH ];then
+  echo [`System_date`] Start download now. | tee -a $LOG_FULLPATH
+  else
+    echo [`System_date`] Start download now. | tee $LOG_FULLPATH
+fi
 File_Download $WAR_URL $WAR_FILE_NAME
 warDownloadResult=$?
 File_Download $ZIP_URL $ZIP_FILE_NAME
 zipDownloadResult=$?
 
 if [ $warDownloadResult -eq 2 ];then
-  echo [`System_date`] war file download failed. Exit without any change.
+  echo [`System_date`] war file download failed. Exit without any change. | tee -a $LOG_FULLPATH
   exit 1
   elif  [ $zipDownloadResult -eq 2 ];then
-    echo [`System_date`] zip file download failed. Exit without any change.
+    echo [`System_date`] zip file download failed. Exit without any change. | tee -a $LOG_FULLPATH
     exit 1
 fi
 
 if [[ $warDownloadResult -eq 1 && $zipDownloadResult -eq 1 ]];then
-  echo [`System_date`] Both remote zip file and war file are same as local. Exit without any change.
+  echo [`System_date`] Both remote zip file and war file are same as local. Exit without any change. | tee -a $LOG_FULLPATH
   exit 1
 fi
 
@@ -181,19 +189,19 @@ done
 # Nginx part #
 ##############
 
-mkdir -p $PWD/nginx/conf $PWD/nginx/html $PWD/nginx/logs
-unzip -o $ZIP_FILE_NAME -d $PWD/nginx/html
+mkdir -p $RUNNING_FOLDER/nginx/conf $RUNNING_FOLDER/nginx/html $RUNNING_FOLDER/nginx/logs
+unzip -o $ZIP_FILE_NAME -d $RUNNING_FOLDER/nginx/html
 
 # Create nginx conf file
 tomcatDockerIP=`docker inspect --format '{{.NetworkSettings.IPAddress}}' $tomcatRunningID`
-cat > $PWD/nginx/conf/tomcat.conf <<EOF
+cat > $RUNNING_FOLDER/nginx/conf/tomcat.conf <<EOF
 upstream tomcat {
     ip_hash;
     server $tomcatDockerIP:$tomcatPort;
 }
 EOF
 
-cat > $PWD/nginx/conf/defaul.conf <<'EOF'
+cat > $RUNNING_FOLDER/nginx/conf/defaul.conf <<'EOF'
 server {
     listen       80;
     server_name  localhost;
@@ -231,7 +239,7 @@ sleep 5
 
 # Re-run nginx 
 echo [`System_date`] Start nginx container.
-nginxRunningID=`docker run -d -p 80:80 -v $PWD/nginx/conf/:/etc/nginx/conf.d/ -v $PWD/nginx/html/:/usr/share/nginx/html/ -v $PWD/nginx/logs:/wwwlogs nginx`
+nginxRunningID=`docker run -d -p 80:80 -v $RUNNING_FOLDER/nginx/conf/:/etc/nginx/conf.d/ -v $RUNNING_FOLDER/nginx/html/:/usr/share/nginx/html/ -v $RUNNING_FOLDER/nginx/logs:/wwwlogs nginx`
 echo [`System_date`] Nginx container is running now. 
 echo [`System_date`] Sleep 10 seconds.
 sleep 10
@@ -242,7 +250,7 @@ tomcatWARHttpCode=`curl -o /dev/null -s -w %{http_code} "http://localhost/$WAR_F
 if [[ $nginxHttpCode = 200 && $tomcatWARHttpCode = 302 ]];then
   echo [`System_date`] Nginx web is ok.
   publicIP=`wget -t 3 -T 15 -qO- http://ipv4.icanhazip.com`
-  echo -e [`System_date`] "\033[32;49;1m Completed! \033[39;49;0m" You can access http://localhost/$WAR_FOLDER in a brower to check. 
+  echo -e [`System_date`] "\033[32;49;1m Completed! \033[39;49;0m" You can access http://localhost/$WAR_FOLDER in a brower to check.  | tee -a $LOG_FULLPATH
   echo [`System_date`] If you have a public IP, you can access http://$publicIP/$WAR_FOLDER in brower to double check.
   exit 0
   else
