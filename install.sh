@@ -19,23 +19,6 @@ configFullPath=$runFolder$configFile
 serviceFullName=atnd.service
 serviceName=${serviceFullName:0:-8}
 
-if [ ! -e $runFile ];then
-  echo The $atnd.sh is not exist in the same folder. Exit without any change.
-  exit 1
-fi
-
-set -x
-cat /etc/redhat-release | grep 7\..*
-set +x
-if [ $? -ne 0 ];then
-  echo Please make sure your system is CentOS 7 or RedHat 7.
-  exit 1
-fi
-
-chmod 755 $runFile
-mkdir -p $runFolder $runFolder/log
-\cp $runFile $runFolder
-
 ######################################
 # function Input_to_Constant
 #
@@ -79,60 +62,133 @@ function Input_to_Constant(){
     ZIP_URL=\"$fileUrl\"
     return 0
   else
-    echo Error input of function Constant_Input should be war or zip.
+    echo Error input of function Input_to_Constant should be war or zip.
     return 2
   fi
 }
 ###############################
 
+########################################
+# function Create_Config
+# 
+# Description
+# Add 4 CONSTANT: WAR_FILE_NAME WAR_URL ZIP_FILE_NAME ZIP_URL to a config file $configFullPath
+# Return code
+# 0 Create config correctly 
+#
+function Create_Config(){
+  if [ -e $configFullPath ];then
+    echo The $configFullPath is existed. Exit without any change.
+    exit 1
+  fi
+  Input_to_Constant war
+  warInputResult=$?
+  while [[ $warInputResult -eq 1 || $warInputResult -eq 2 ]]
+  do
+    Input_to_Constant war
+    warInputResult=$?
+  done
+  
+  Input_to_Constant zip
+  zipInputResult=$?
+  while [[ $zipInputResult -eq 1 || $zipInputResult -eq 2 ]]
+  do
+    Input_to_Constant zip
+    zipInputResult=$?
+  done
+  
+  if [ ! -e $configFullPath ];then
+    touch $configFullPath
+    echo WAR_FILE_NAME=$WAR_FILE_NAME > $configFullPath
+    echo WAR_URL=$WAR_URL >> $configFullPath
+    echo ZIP_FILE_NAME=$ZIP_FILE_NAME >> $configFullPath
+    echo ZIP_URL=$ZIP_URL >> $configFullPath
+  fi
+}
+############################
+
+###############################################
+# function Confirm_Config
+# 
+# Description
+# Confirm the config file if needed.
+#
+# Return code
+# 0 Confirm OK
+# 1 Need re-confirm
+# 2 Need re-create config
+function Confirm_Config(){
+  if [ ! -e $configFullPath ];then
+    echo The $configFullPath is not existed. Exit without any change.
+    return 1
+  fi
+  echo Your input is below, please confirm again
+  echo "#############"
+  cat $configFullPath
+  echo "#############"
+  echo -en "Is this config right? Y(y)/N(n): "
+  read choice
+  case $choice in
+    Y|y|yes|Yes) echo Accept and continue.
+         echo Your config is saved at $configFullPath.
+         echo You can run this script again to re-config.
+         return 0
+    ;;
+    N|n|no|No) echo Please input the file location again.
+         rm -f $configFullPath
+         return 2
+    ;;
+    *) echo Invalid input. Please input Y or N. Your input is $choice.
+      # echo Exit now without any changes. You can run this script again if needed.
+       return 1
+    ;;
+  esac
+}
+################################
+
+##############
+# Some Check #
+##############
+if [ ! -e $runFile ];then
+  echo The $atnd.sh is not exist in the same folder. Exit without any change.
+  exit 1
+fi
+
+set -x
+cat /etc/redhat-release | grep 7\..*
+set +x
+if [ $? -ne 0 ];then
+  echo Please make sure your system is CentOS 7 or RedHat 7.
+  exit 1
+fi
+
+if [ -e $configFullPath ];then
+  echo The $configFullPath is existed. Exit without any change.
+  exit 1
+fi
+
+chmod 755 $runFile
+mkdir -p $runFolder $runFolder/log
+\cp $runFile $runFolder
+
 ##################
 # CONSTANT INPUT #
 ##################
-Input_to_Constant war
-warInputResult=$?
-while [[ $warInputResult -eq 1 || $warInputResult -eq 2 ]]
+Create_Config
+Confirm_Config
+confirmResult=$?
+
+while [[ $confirmResult -eq 1 || $confirmResult -eq 2 ]];
 do
-  Input_to_Constant war
-  warInputResult=$?
+  if [ $confirmResult -eq 2 ];then
+    Create_Config
+    Confirm_Config
+    confirmResult=$?
+  elif [ $confirmResult -eq 1 ];then
+    Confirm_Config
+    confirmResult=$?
+  fi
 done
-
-Input_to_Constant zip
-zipInputResult=$?
-while [[ $zipInputResult -eq 1 || $zipInputResult -eq 2 ]]
-do
-  Input_to_Constant zip
-  zipInputResult=$?
-done
-
-if [ ! -e $configFullPath ];then
-  touch $configFullPath
-  echo WAR_FILE_NAME=$WAR_FILE_NAME > $configFullPath
-  echo WAR_URL=$WAR_URL >> $configFullPath
-  echo ZIP_FILE_NAME=$ZIP_FILE_NAME >> $configFullPath
-  echo ZIP_URL=$ZIP_URL >> $configFullPath
-fi
-
-#  echo You input is below, please confirm again
-#  echo "#############"
-#  cat $configFullPath
-#  echo "#############"
-#  echo -en "Is this input right? Input Y(y)/N(n): "
-#  read choice
-#  case $choice in
-#    Y|y|yes|Yes) echo Accept and continue.
-#         echo Your config is saved at $configFullPath.
-#         echo You can run this script again to re-config.
-#         return 0
-#    ;;
-#    N|n|no|No) echo Please input the file location again.
-#         rm -f $configFullPath
-#         return 1
-#    ;;
-#    *) echo Invalid input. Please input Y or N. Your input is $choice.
-#      # echo Exit now without any changes. You can run this script again if needed.
-#       return 2
-#    ;;
-#  esac
 
 cat > /usr/lib/systemd/system/$serviceFullName <<EOF
 [Unit]
