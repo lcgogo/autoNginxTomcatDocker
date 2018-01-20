@@ -22,15 +22,16 @@
 
 #############
 # CONSTANT
-# Example:
-# WAR_FILE_NAME=demo.war
-# WAR_URL="http://lcgogo-java-demo.oss-cn-beijing.aliyuncs.com/java-demo/target/"
 #
-# ZIP_FILE_NAME=123.zip
+# Followed 4 CONSTANTs are read from file $PWD/atnd.conf
+# Example:
+# WAR_FILE_NAME="demo.war"
+# WAR_URL="http://lcgogo-java-demo.oss-cn-beijing.aliyuncs.com/java-demo/target/"
+# ZIP_FILE_NAME="123.zip"
 # ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
 export `cat $PWD/atnd.conf`
-WAR_URL=${WAR_URL:1:-1}
-WAR_FOLDER=${WAR_FILE_NAME:0:-4}
+WAR_URL=${WAR_URL:1:-1}  # :1:-1 to remove " in string's head and end
+WAR_FOLDER=${WAR_FILE_NAME:1:-5}  # used in tomcat folder webapps
 ZIP_URL=${ZIP_URL:1:-1}
 #############
 
