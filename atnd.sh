@@ -32,7 +32,9 @@
 # ZIP_URL="https://github.com/lcgogo/autoTomcatDocker/raw/master/"
 export `cat $PWD/atnd.conf`
 WAR_URL=${WAR_URL:1:-1}  # :1:-1 to remove " in string's head and end
-WAR_FOLDER=${WAR_FILE_NAME:1:-5}  # used in tomcat folder webapps
+echo $WAR_FILE_NAME
+WAR_FOLDER=${WAR_FILE_NAME:0:-4}  # used in tomcat folder webapps
+echo $WAR_FOLDER
 ZIP_URL=${ZIP_URL:1:-1}
 #############
 
