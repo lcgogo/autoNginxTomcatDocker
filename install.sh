@@ -8,17 +8,10 @@
 # mvn test
 # echo $BUILD_NUMBER > target/BUILD_NUMBER.txt
 #
-#
 
-echo This script is used to install atnd.sh as a system service.
-
-runFile=atnd.sh
-runFolder=/usr/local/atnd/
-configFile=atnd.conf
-configFullPath=$runFolder$configFile
-serviceFullName=atnd.service
-serviceName=${serviceFullName:0:-8}
-
+#############
+# Functions #
+#############
 ######################################
 # function Input_to_Constant
 #
@@ -28,6 +21,7 @@ serviceName=${serviceFullName:0:-8}
 #
 # Input
 # $1 = fileType #should be war or zip
+# $2 = inputUrl
 # 
 # Return code
 # 0 success
@@ -35,14 +29,16 @@ serviceName=${serviceFullName:0:-8}
 # 2 error
 function Input_to_Constant(){
   local fileType=$1
-  local inputUrl=""
+  local inputUrl=$2
   local fileName=""
   local fileUrl=""
   local fileSuffix=""
 
   echo -e Please input the location of "\033[32;49;1m $fileType \033[39;49;0m"  file:
   echo \(For example: http://example.com/demo.$fileType or /var/local/atnd/demo.$fileType\)
-  read inputUrl
+  if [ -z $inputUrl ];then
+    read inputUrl
+  fi
   fileName=`echo $inputUrl | awk -F "/" '{print $NF}'`
   fileUrl=`echo ${inputUrl:0:-${#fileName}}`
   fileSuffix=`echo ${fileName:(-3)}`
@@ -77,6 +73,8 @@ function Input_to_Constant(){
 # 0 Create config correctly 
 #
 function Create_Config(){
+  local warInputResult=""
+  local zipInputResult=""
   if [ -e $configFullPath ];then
     echo The $configFullPath is existed. Exit without any change.
     exit 1
@@ -146,6 +144,18 @@ function Confirm_Config(){
 }
 ################################
 
+########
+# Main #
+########
+echo This script is used to install atnd.sh as a system service.
+
+runFile=atnd.sh
+runFolder=/usr/local/atnd/
+configFile=atnd.conf
+configFullPath=$runFolder$configFile
+serviceFullName=atnd.service
+serviceName=${serviceFullName:0:-8}
+
 ##############
 # Some Check #
 ##############
@@ -178,6 +188,10 @@ Create_Config
 Confirm_Config
 confirmResult=$?
 
+# function Confirm_Config Return code
+# 0 Confirm OK
+# 1 Need re-confirm
+# 2 Need re-create config
 while [[ $confirmResult -eq 1 || $confirmResult -eq 2 ]];
 do
   if [ $confirmResult -eq 2 ];then
