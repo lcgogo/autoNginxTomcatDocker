@@ -12,6 +12,7 @@
 # 2018.Jan.14th  Lewis Li  ver1.0  Add http code check and release version 1.0
 # 2018.Jan.19th  Lewis Li  ver1.1  Move CONSTANT to a seperated file atnd.conf
 # 2018.Jan.20th  Lewis Li  ver1.2  Add download failure check.
+# 2018.Jan.20th  Lewis Li  ver1.3  Optimize the http check output.
 ###########################
 
 ############
@@ -253,8 +254,13 @@ if [[ $nginxHttpCode = 200 && $tomcatWARHttpCode = 302 ]];then
   echo -e [`System_date`] "\033[32;49;1m Completed! \033[39;49;0m" You can access http://localhost/$WAR_FOLDER in a brower to check.  | tee -a $LOG_FULLPATH
   echo [`System_date`] If you have a public IP, you can access http://$publicIP/$WAR_FOLDER in brower to double check.
   exit 0
-  else
-    echo [`System_date`] Nginx web is error with http code $nginxHttpCode. Please check http://localhost
-    echo [`System_date`] Tomcat web is error with http code $tomcatWARHttpCode. Please check http://localhost/$WAR_FOLDER
+  elif [[ $nginxHttpCode != 200 && $tomcatWARHttpCode = 302 ]];then
+    echo [`System_date`] Nginx web is error with http code $nginxHttpCode. Please check http://localhost  | tee -a $LOG_FULLPATH
     exit 2
+  elif [[ $nginxHttpCode = 200 && $tomcatWARHttpCode != 302 ]];then
+    echo [`System_date`] Tomcat web is error with http code $tomcatWARHttpCode. Please check http://localhost/$WAR_FOLDER  | tee -a $LOG_FULLPATH
+    exit 2
+  else
+    echo [`System_date`] Nginx web is error with http code $nginxHttpCode. Please check http://localhost  | tee -a $LOG_FULLPATH
+    echo [`System_date`] Tomcat web is error with http code $tomcatWARHttpCode. Please check http://localhost/$WAR_FOLDER  | tee -a $LOG_FULLPATH
 fi
