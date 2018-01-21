@@ -212,7 +212,6 @@ systemctl enable $serviceName
 sleep 2
 set -x
 systemctl status $serviceName -l
-set +x
 if [ $? -ne 0 ];then
   echo $serviceName is not active correctly. Please manual check.
   exit 2
